@@ -88,7 +88,8 @@ project_root/
 * **Auto-Fill:** Fetches Employee Name, Gender, and Address instantly, eliminating manual typing.
 
 ### 2. Intelligent Voucher Management
-* **Uniqueness Check:** The system queries the database in real-time to ensure a voucher number hasn't been used before allowing a save.
+* **Uniqueness Check:** It automatically generates unique voucher codes with an incremental serial number, enabling efficient sorting and structured data management.
+
 * **Smart Suffixing:** If multiple employees are selected for one trip (e.g., Carpooling), the system automatically splits the voucher (e.g., `9001A`, `9001B`) while keeping the base number linked.
 
 ### 3. Bulk Operations
