@@ -137,7 +137,7 @@ port = 5432
 
 4. **Run the App:**
    ```bash
-   streamlit run scripts/taxi_data_entry_web.py
+   streamlit run scripts/taxi_data_entry_webapp.py
 
 
 ## <a name="future-roadmap"></a>  Future Roadmap
@@ -145,18 +145,18 @@ We plan to scale this system with the following enhancements:
 
 📊 Analytics Dashboard: Add a visual layer to track Total Spend per Vendor, Peak Shift Times, and Cost per Employee.
 
-📱 Mobile Employee View: A mobile-friendly page where employees can check their assigned Cab and Voucher number directly.
+📱 Mobile Employee View: A mobile-friendly page where employees can upload their trip details and Taxi Bill to claim their trip cost directly.
 
-📍 Maps Integration: Integrate Google Maps API to visualize drop-off points and optimize route planning.
 
-📧 Automated Notifications: Trigger email or SMS alerts to employees containing their Voucher details immediately upon booking.
+📧 Automated Notifications: Trigger email or SMS alerts to employees containing their Voucher details immediately after payment intiated.
 
 🔐 Role-Based Access Control (RBAC): Implement login levels (Admin vs. Viewer) to secure sensitive data.
 
 ---
 
 ## <a name="author--contact"></a>Author & Contact
-Abhishek Pandey Data Analyst
+Abhishek Pandey (Data Analyst)
 
 📧 Email: abhishekpandey4577@gmain.com
+
 🔗 LinkedIn: www.linkedin.com/in/abhishek-art01 
