@@ -78,7 +78,7 @@ project_root/
 ├── .gitignore                     # Git ignore rules (secrets, venv, etc.)
 ├── readme.md                      # Project documentation
 └── requirements.txt               # Python dependencies
-
+```
 
 ## <a name="key-features--logic"></a>Key Features & Logic
 
