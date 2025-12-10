@@ -18,16 +18,21 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. DATABASE FUNCTIONS
 def get_db_connection():
     try:
-        secrets = toml.load(".streamlit/secrets.toml")
-        db = secrets["postgres"]
+        # st.secrets works on Cloud (reads dashboard settings) AND Local (reads the file automatically)
+        db = st.secrets["postgres"] 
+        
         return psycopg2.connect(
-            host=db["host"], database=db["dbname"], user=db["user"],
-            password=db["password"], port=db["port"], sslmode="require"
+            host=db["host"],
+            database=db["dbname"],
+            user=db["user"],
+            password=db["password"],
+            port=db["port"]
         )
-    except: return None
+    except Exception as e:
+        st.error(f"❌ Connection Failed: {e}")
+        return None
 
 def run_query(query, params=None, fetch=False):
     conn = get_db_connection()
