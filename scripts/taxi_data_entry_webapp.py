@@ -7,7 +7,7 @@ import string
 from datetime import datetime
 
 # 1. PAGE CONFIG
-st.set_page_config(page_title="Taxi Manager", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="dheeraj taxi management", layout="wide", initial_sidebar_state="collapsed")
 
 # CSS style
 st.markdown("""
