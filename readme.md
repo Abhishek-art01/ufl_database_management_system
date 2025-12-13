@@ -113,7 +113,7 @@ The application utilizes a compact "Single Page" design to maximize efficiency f
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/Abhishek-art01/Taxi_management_db.git](https://github.com/Abhishek-art01/Taxi_management_db.git)
+   git clone https://github.com/Abhishek-art01/Taxi_management_db.git
    cd Taxi_management_db
 
 2. **Install dependencies:**

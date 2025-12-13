@@ -2,3 +2,7 @@ streamlit
 pandas
 psycopg2-binary
 toml
+openpyxl
+xlrd
+xlsxwriter
+tabulate
