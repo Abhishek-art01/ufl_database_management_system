@@ -183,6 +183,20 @@ def process_data(uploaded_file):
     final_df['Direction'] = final_df['Direction'].astype(str).str.replace('Logout', 'Drop', regex=False)
     final_df.loc[final_df['Pax_no'] == 2, 'Marshall'] = np.nan
     final_df['Marshall'] = final_df['Marshall'].astype(str).str.replace('MARSHALL', 'Guard', regex=False)
+
+    # --- DATE CLEANING (FIX FOR "JUST DATE") ---
+    # 1. Convert to proper datetime first
+    final_df['Trip_Date'] = pd.to_datetime(final_df['Trip_Date'], errors='coerce')
+    
+    # 2. Create the file naming string BEFORE we force it to string format (safest)
+    try:
+        date_val = final_df['Trip_Date'].iloc[0].strftime('%d-%m-%Y')
+    except:
+        date_val = "Unknown_Date"
+    
+    # 3. FORCE Trip_Date to be a String in DD-MM-YYYY format
+    # This removes any time component permanently
+    final_df['Trip_Date'] = final_df['Trip_Date'].dt.strftime('%d-%m-%Y')
     
     # Clean up strings
     final_df.columns = final_df.columns.astype(str).str.strip().str.upper()
@@ -209,7 +223,7 @@ def process_data(uploaded_file):
     # --- PREPARE BILLING DATAFRAME (Clean, no extra cols) ---
     billing_cols = [
         'TRIP_DATE', 'TRIP_ID', 'FLIGHT_NO.', 'EMPLOYEE_ID', 'EMPLOYEE_NAME', 
-        'GENDER', 'ADDRESS', 'LANDMARK', 'VEHICLE_NO', 'DIRECTION', 
+        'GENDER', 'ADDRESS','PASSENGER_MOBILE', 'LANDMARK', 'VEHICLE_NO', 'DIRECTION', 
         'SHIFT_TIME', 'EMP_COUNT', 'PAX_NO', 'MARSHALL', 'REPORTING_LOCATION'
     ]
     # Filter columns that actually exist
@@ -220,14 +234,15 @@ def process_data(uploaded_file):
     ops_df = final_df.copy()
     
     # 1. Add HOME TIME (Shift Time - 2 Hours)
+
     # We use the temp object column we created earlier
     ops_df['HOME_TIME'] = (ops_df['SHIFT_TIME_OBJ'] - timedelta(hours=2)).dt.time
     
     # Select Cols
     ops_cols = [
         'TRIP_DATE', 'TRIP_ID', 'FLIGHT_NO.', 'EMPLOYEE_ID', 'EMPLOYEE_NAME', 
-        'GENDER', 'ADDRESS', 'LANDMARK', 'VEHICLE_NO', 'DIRECTION', 
-        'SHIFT_TIME', 'HOME_TIME', 'EMP_COUNT', 'PAX_NO', 'MARSHALL', 'REPORTING_LOCATION'
+        'GENDER', 'ADDRESS','PASSENGER_MOBILE', 'LANDMARK', 'VEHICLE_NO', 'DIRECTION', 
+        'HOME_TIME', 'SHIFT_TIME', 'EMP_COUNT', 'PAX_NO', 'MARSHALL', 'REPORTING_LOCATION'
     ]
     ops_cols = [c for c in ops_cols if c in ops_df.columns]
     ops_df = ops_df[ops_cols]
