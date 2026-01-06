@@ -11,7 +11,7 @@ import numpy as np
 import datetime
 
 # ------------------- CONFIGURATION --------------------
-BASE_DIR = r"C:\Users\Ravi Pal\my_projects\project_p767\Taxi_management_db\data"
+BASE_DIR = r"D:\my_projects\air-india-data\data-dec-2025"
 SOURCE_FOLDER = os.path.join(BASE_DIR, "manual_operation_data")
 DESTINATION_FOLDER = os.path.join(BASE_DIR, "manul_files")
 PROCESSED_FOLDER = os.path.join(SOURCE_FOLDER, "processed")
