@@ -216,7 +216,22 @@ def process_data(uploaded_file):
     final_df['Vehicle_No'] = final_df['Vehicle_No'].astype(str).str.replace('-', '', regex=False)
 
     # This splits the string by space (default) into separate columns (0, 1, etc.)
+    # 1. Split the string. expand=True creates a DataFrame.
     split_data = final_df['Driver_Login_Time'].astype(str).str.strip().str.split(expand=True)
+
+    # 2. Safe Assignment: Check if we actually got 2 columns
+    if split_data.shape[1] > 1:
+        # Normal case: We found "Direction" and "Time"
+        final_df['Direction'] = split_data[0]
+        final_df['Shift_Time_Obj'] = pd.to_datetime(split_data[1], format='%H:%M', errors='coerce')
+    else:
+        # Fallback case: No space was found (e.g., data is just "Pickup" or empty)
+        # We assign what we found to Direction, and set Time to NaT (Not a Time)
+        final_df['Direction'] = split_data[0]
+        final_df['Shift_Time_Obj'] = pd.NaT 
+
+    # 3. Extract just the time component
+    final_df['Shift_Time'] = final_df['Shift_Time_Obj'].dt.time
     final_df['Direction'] = split_data[0]
     
     final_df['Shift_Time_Obj'] = pd.to_datetime(split_data[1], format='%H:%M', errors='coerce')
