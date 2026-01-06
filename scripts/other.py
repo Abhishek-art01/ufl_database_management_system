@@ -86,65 +86,65 @@ def clean_dataframe(df):
 
 def process_data(uploaded_file):
     try:
+        # 1. Load Data
         try:
             df = pd.read_excel(uploaded_file, header=None)
         except:
             df = pd.read_excel(uploaded_file, header=None, engine='xlrd')
 
-        # Cleanup basic
+        # Basic Cleanup
         df.drop(index=1, inplace=True)
         df.dropna(how="all", inplace=True)
         df.reset_index(drop=True, inplace=True)
 
         # ---------------------------------------------------------
-        # UPDATED LOGIC: Find Trip ID Column Dynamically
+        # 2. Find Trip ID Column Dynamically
         # ---------------------------------------------------------
-        # We look for a column that has "T" followed by numbers (e.g., T3599973)
-        trip_col_idx = 10 # Default fallback
+        trip_col_idx = 10 
         for col in df.columns:
-            # Check if any value in this column starts with 'T' and has digits
             sample = df[col].astype(str).head(10)
             if sample.str.contains(r'^T\d+', na=False).any():
                 trip_col_idx = col
                 break
         
-        # Create a clean Trip ID column
         df["Trip_ID_Clean"] = df[trip_col_idx].astype(str).apply(
             lambda x: x if str(x).startswith("T") else pd.NA
         ).ffill()
 
         # ---------------------------------------------------------
-        # UPDATED LOGIC: Identify Rows Agnostically
+        # 3. Identify Rows Agnostically (Login/Logout)
         # ---------------------------------------------------------
-        # Instead of looking for "UNITED FACILITIES", we look for "Log" in column 2 
-        # (matches "Login", "Logout", "Login 00:00", "Logout 00:00")
+        # Check column 2 for 'LOG' (Login/Logout) to identify header rows
         mask_headers = df[2].astype(str).str.contains("LOG", na=False, case=False)
-        
-        # Passenger rows are those where Column 0 is a number (1, 2, 3...)
         mask_pax = df[0].astype(str).str.match(r"^\d+$")
 
+        # Rename Header Rows
         df_headers = df[mask_headers].rename(columns={
             0: 'Trip_Date', 1: 'Agency_Name', 2: 'Driver_Login_Time', 3: 'Vehicle_No',
             4: 'Driver_Name', 5: 'Trip_Zone', 6: 'Driver_Mobile', 7: 'Marshall',
             8: 'Distance', 9: 'Emp_Count', 10: 'Trip_Count', 11: 'Trip_Sheet_ID_Raw'
         })
         
+        # Rename Passenger Rows
         df_pax = df[mask_pax].rename(columns={
             0: 'Pax_no', 1: 'Reporting_Time', 2: 'Employee_ID', 3: 'Employee_Name',
             4: 'Gender', 5: 'Emp_Category', 6: 'Flight_No.', 7: 'Address',
             8: 'Reporting_Location', 9: 'Landmark', 10: 'Passenger_Mobile'
         })
 
-        # Merge
-        final = pd.merge(df_pax, df_headers[['Trip_ID_Clean', 'Trip_Date', 'Driver_Login_Time', 'Vehicle_No', 'Marshall']], 
-                         left_on='Trip_ID_Clean', right_on='Trip_ID_Clean', how='left')
+        # ---------------------------------------------------------
+        # 4. MERGE EVERYTHING (No column filtering)
+        # ---------------------------------------------------------
+        # We merge ALL columns from df_headers so nothing is lost
+        final = pd.merge(df_pax, df_headers, on='Trip_ID_Clean', how='left')
         
+        # Cleanup Keys
         final.rename(columns={'Trip_ID_Clean': 'Trip_ID'}, inplace=True)
         final['Trip_ID'] = final['Trip_ID'].str.replace('T', '', regex=False)
         final['Vehicle_No'] = final['Vehicle_No'].astype(str).str.replace('-', '', regex=False)
         
         # ---------------------------------------------------------
-        # UPDATED LOGIC: Robust Time Split
+        # 5. Robust Time & Direction Split
         # ---------------------------------------------------------
         split_data = final['Driver_Login_Time'].astype(str).str.strip().str.split(expand=True)
         
@@ -164,25 +164,36 @@ def process_data(uploaded_file):
             'LOGOUT': 'DROP'
         }, regex=True)
         
-        # Marshall cleanup
+        # Marshall cleanup (Remove Marshall name if Pax_no is 2, assuming shared cab logic)
         final.loc[final['Pax_no'] == 2, 'Marshall'] = ''
 
         # Date Format
         final['Trip_Date'] = pd.to_datetime(final['Trip_Date'], errors='coerce').dt.strftime('%d-%m-%Y')
         
-        # Final Polish
+        # Final Polish (Uppercasing)
         final = clean_dataframe(final)
         if 'SHIFT_TIME' in final.columns:
             final.sort_values('SHIFT_TIME', inplace=True)
 
-        # --- PREPARE OUTPUTS ---
-        # Billing
-        billing_cols = ['TRIP_DATE', 'TRIP_ID', 'FLIGHT_NO.', 'EMPLOYEE_ID', 'EMPLOYEE_NAME', 
-                        'GENDER', 'ADDRESS', 'PASSENGER_MOBILE', 'LANDMARK', 'VEHICLE_NO', 
-                        'DIRECTION', 'SHIFT_TIME', 'EMP_COUNT', 'PAX_NO', 'MARSHALL', 'REPORTING_LOCATION']
-        billing_out = final[[c for c in billing_cols if c in final.columns]].copy()
+        # ---------------------------------------------------------
+        # 6. FINAL OUTPUTS (UPDATED: ALL COLUMNS)
+        # ---------------------------------------------------------
         
-        # Ops
+        # I have added every likely useful column here. 
+        # You can rearrange the order if needed.
+        billing_cols = [
+            'TRIP_DATE', 'TRIP_ID', 'AGENCY_NAME', 'FLIGHT_NO.', 'EMPLOYEE_ID', 'EMPLOYEE_NAME', 
+            'GENDER', 'EMP_CATEGORY', 'ADDRESS', 'PASSENGER_MOBILE', 'LANDMARK', 'VEHICLE_NO', 
+            'DRIVER_NAME', 'DRIVER_MOBILE', 'TRIP_ZONE', 'DISTANCE',
+            'DIRECTION', 'SHIFT_TIME', 'REPORTING_TIME', 'REPORTING_LOCATION',
+            'EMP_COUNT', 'PAX_NO', 'MARSHALL', 'TRIP_COUNT'
+        ]
+        
+        # Select only columns that actually exist to avoid errors
+        existing_cols = [c for c in billing_cols if c in final.columns]
+        billing_out = final[existing_cols].copy()
+        
+        # Ops File Logic (Unchanged)
         ops_df = final.copy()
         ops_df['PICKUP POINT'] = (ops_df['SHIFT_TIME_OBJ'] - timedelta(hours=2)).dt.time
         if 'MARSHALL' in ops_df.columns:
@@ -212,38 +223,3 @@ def process_data(uploaded_file):
 
     except Exception as e:
         return None, None, f"Error: {str(e)}"
-
-# --- 3. STREAMLIT APP ---
-st.set_page_config(page_title="TripSheet Manager", layout="wide")
-st.title("✈️ Universal TripSheet Cleaner")
-st.markdown("Works with **J Travels, United Facilities, Bajaj**, and others.")
-
-uploaded_file = st.file_uploader("Drop Excel File Here", type=['xls', 'xlsx'])
-
-if uploaded_file:
-    with st.spinner('🚀 Processing...'):
-        billing_df, ops_df, fname = process_data(uploaded_file)
-        
-        if billing_df is not None:
-            st.success(f"✅ Success! File: **{fname}**")
-            c1, c2 = st.columns(2)
-            
-            with c1:
-                formatter = ExcelFormatter(billing_df)
-                formatter.set_column_widths('BILLING')
-                formatter.write_data('BILLING')
-                st.download_button("📥 Billing Excel", data=formatter.get_file(), 
-                                   file_name=f"BILLING_{fname}.xlsx", 
-                                   mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-                                   use_container_width=True, type="primary")
-
-            with c2:
-                formatter = ExcelFormatter(ops_df)
-                formatter.set_column_widths('OPS')
-                formatter.write_data('OPS')
-                st.download_button("📥 Ops Excel", data=formatter.get_file(), 
-                                   file_name=f"OPS_{fname}.xlsx", 
-                                   mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-                                   use_container_width=True, type="primary")
-        else:
-            st.error(f"❌ {fname}")
