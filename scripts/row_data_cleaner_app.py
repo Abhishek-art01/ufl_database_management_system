@@ -215,7 +215,8 @@ def process_data(uploaded_file):
     final_df['Trip_ID'] = final_df['Trip_ID'].astype(str).str.replace('T', '', regex=False)
     final_df['Vehicle_No'] = final_df['Vehicle_No'].astype(str).str.replace('-', '', regex=False)
 
-    split_data = final_df['Driver_Login_Time'].astype(str).str.strip().str.split(' ', n=1, expand=True)
+    # This splits the string by space (default) into separate columns (0, 1, etc.)
+    split_data = final_df['Driver_Login_Time'].astype(str).str.strip().str.split(expand=True)
     final_df['Direction'] = split_data[0]
     
     final_df['Shift_Time_Obj'] = pd.to_datetime(split_data[1], format='%H:%M', errors='coerce')
